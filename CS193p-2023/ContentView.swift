@@ -8,25 +8,51 @@
 import SwiftUI
 
 struct ContentView: View {
+
     let emojis = ["👻", "🎃", "🕷️", "😈", "💀", "🕸️", "🧙‍♀️", "🙀", "👺", "😱", "☠️", "🍭"]
+    let cars = ["🚙", "🚘", "🚗", "🚖", "🚕", "🚔", "🚓", "🏎️", "🏁", "🚙", "🚘", "🚗", "🚖", "🚕", "🚔", "🚓", "🏎️", "🏁",
+                "🚙", "🚘", "🚗", "🚖", "🚕", "🚔", "🚓", "🏎️", "🏁", "🚙", "🚘", "🚗", "🚖", "🚕", "🚔", "🚓", "🏎️", "🏁"]
+    let faces = ["😁", "🥹", "😇", "😘", "😍", "🥳", "🥸", "😡", "🤭", "😁", "🥹", "😇", "😘", "😍", "🥳", "🥸", "😡", "🤭",
+                 "😁", "🥹", "😇", "😘", "😍", "🥳", "🥸", "😡", "🤭", "😁", "🥹", "😇", "😘", "😍", "🥳", "🥸", "😡", "🤭"]
+    let foods = ["🌱", "🌽", "🍄", "🍅", "🍆", "🍇", "🍑", "🍚", "🥑", "🌱", "🌽", "🍄", "🍅", "🍆", "🍇", "🍑", "🍚", "🥑",
+                 "🌱", "🌽", "🍄", "🍅", "🍆", "🍇", "🍑", "🍚", "🥑", "🌱", "🌽", "🍄", "🍅", "🍆", "🍇", "🍑", "🍚", "🥑"]
+
+    @State var themeGame: GameTheme = .Cars
+
+    var listOfContent: [String] {
+        switch themeGame {
+        case .Cars: return cars.shuffled()
+        case .Faces: return faces.shuffled()
+        case .Foods: return foods.shuffled()
+        }
+    }
+
     @State var cardCount = 4
+
     var body: some View {
         // Note: Không thể dùng for trong các Stack. Đọc bên dưới để biết trong ViewBuilder support những loại nào
         VStack {
+            tilteGame
             ScrollView {
                 cards
             }
             Spacer()
             cardCountAdjuster
+            themeChossing
         }
         .padding()
+    }
+
+    var tilteGame: some View {
+        Text("Memorize")
+            .font(.largeTitle)
     }
 
     var cards: some View {
         // minimum size của grid item sẽ là 120
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 120))]) {
-            ForEach(0..<cardCount, id: \.self) { index in
-                CardView(content: emojis[index], isFaceUp: true)
+            ForEach(0..<listOfContent.count-1, id: \.self) { index in
+                CardView(content: listOfContent[index], isFaceUp: false)
                     .aspectRatio(2/3, contentMode: .fit)
             }
         }
@@ -60,6 +86,49 @@ struct ContentView: View {
 
     var cardAdder: some View {
         cardCountAdjuster(by: 1, symbol: "rectangle.stack.fill.badge.plus")
+    }
+
+    var themeChossing: some View {
+        VStack {
+            HStack(alignment: .bottom, spacing: 30) {
+                buttonChooseTheme(.Cars)
+                buttonChooseTheme(.Faces)
+                buttonChooseTheme(.Foods)
+            }
+            Text("Select another theme")
+                .padding(.top, 10)
+                .font(.caption)
+        }
+    }
+
+    func buttonChooseTheme(_ theme: GameTheme) -> some View {
+        VStack {
+            Button(action: {
+                handleGame(with: theme)
+            }, label: {
+                Image(systemName: theme.getImageSystemName())
+                    .font(.largeTitle)
+            })
+            Text(theme.rawValue)
+        }
+    }
+
+    func handleGame(with theme: GameTheme) {
+        themeGame = theme
+    }
+
+    enum GameTheme: String {
+        case Cars
+        case Faces
+        case Foods
+
+        func getImageSystemName() -> String {
+            switch self {
+            case .Cars: return "car.rear"
+            case .Faces: return "face.smiling"
+            case .Foods: return "carrot"
+            }
+        }
     }
 }
 
