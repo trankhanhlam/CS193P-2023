@@ -1,5 +1,5 @@
 //
-//  ContentView.swift
+//  EmojiMemoryGameView.swift
 //  CS193p-2023
 //
 //  Created by Tran Lam on 16/11/2023.
@@ -7,65 +7,48 @@
 
 import SwiftUI
 
-struct ContentView: View {
-    let emojis = ["👻", "🎃", "🕷️", "😈", "💀", "🕸️", "🧙‍♀️", "🙀", "👺", "😱", "☠️", "🍭"]
-    @State var cardCount = 4
+struct EmojiMemoryGameView: View {
+    //ObservedObject có nghĩa là thuộc tính này cần được quan sát. Nếu có bất kì sự thông báo nào từ đối tượng này thì reloadUI, etc
+    /*  */
+    @ObservedObject var viewModel: EmojiMemoryGame
+
     var body: some View {
         // Note: Không thể dùng for trong các Stack. Đọc bên dưới để biết trong ViewBuilder support những loại nào
         VStack {
             ScrollView {
                 cards
             }
-            Spacer()
-            cardCountAdjuster
+            Button("Shuffe") {
+                viewModel.shuffle()
+            }
         }
+
         .padding()
     }
 
     var cards: some View {
-        // minimum size của grid item sẽ là 120
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 120))]) {
-            ForEach(0..<cardCount, id: \.self) { index in
-                CardView(content: emojis[index], isFaceUp: true)
+        // minimum size của grid item sẽ là 85
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 85), spacing: 0)], spacing: 0) {
+            ForEach(viewModel.cards.indices, id: \.self) { index in
+                CardView(card: viewModel.cards[index])
                     .aspectRatio(2/3, contentMode: .fit)
+                    .padding(4)
             }
         }
         .foregroundColor(.orange)
     }
 
-    var cardCountAdjuster: some View  {
-        HStack {
-            cardRemover
-            Spacer()
-            cardAdder
-        }
-        .imageScale(.large)
-        .font(.largeTitle) // Tại sao lại set font ở đây. Do Image (dùng của system name) -> Hệ thống sẽ scale image tới cái font được set -> Để image được gần bằng với font chữ. -> Font chữ to -> Ảnh system to
-    }
-
-    func cardCountAdjuster(by offset: Int, symbol: String) -> some View {
-        Button(action: {
-            cardCount += offset
-        }, label: {
-            Image(systemName: symbol)
-        })
-        .imageScale(.large)
-        .font(.largeTitle) // Tại sao lại set font ở đây. Do Image (dùng của system name) -> Hệ thống sẽ scale image tới cái font được set -> Để image được gần bằng với font chữ. -> Font chữ to -> Ảnh system to
-        .disabled(cardCount + offset < 1 || cardCount + offset > emojis.count)
-    }
-
-    var cardRemover: some View  {
-        cardCountAdjuster(by: -1, symbol: "rectangle.stack.badge.minus.fill")
-    }
-
-    var cardAdder: some View {
-        cardCountAdjuster(by: 1, symbol: "rectangle.stack.fill.badge.plus")
-    }
 }
 
 struct CardView: View {
-    var content: String = "👻"
-    @State var isFaceUp: Bool = true // Khi mark với @State là đang tạo ra biến này là 1 tham chiếu (pointer)
+    // Tại đây để let vì tất nhiên content của card chỉ được khởi tạo 1 lần và không cần thay đổi hay khởi tạo lại với cái khác
+    let card: MemoryGame<String>.Card
+
+    init(card: MemoryGame<String>.Card) {
+        self.card = card
+    }
+
+    /*let isFaceUp: Bool = true*/ // Khi mark với @State là đang tạo ra biến này là 1 tham chiếu (pointer)
     /*Tại sao lại cần @State:
      Về cơ bản ở ViewBuilder bên dưới khi muốn thay đổi biến thuộc Struct là không thể vì biến ở trong Struct sẽ là immutable.
 
@@ -88,14 +71,17 @@ struct CardView: View {
             Group {
                 base.fill(.white)
                 base.strokeBorder(lineWidth: 2)
-                Text(content).font(.largeTitle)
+                Text(card.content)
+//                    .font(.largeTitle)
+                    .font(.system(size: 200))
+                    .minimumScaleFactor(0.1)
+                    .aspectRatio(1, contentMode: .fit)
             }// Dùng Group ở đây vì để thay đổi opacity -> tránh việc khi dùng cardview ở lazyVGrdi (ở vGrid nó sẽ chỉ dùng space thấp nhất cần phải dùng. Sẽ group ở đây và thay đổi opacity thôi thì sẽ keep được chiều cao của cardview là cố định)
-            .opacity(isFaceUp ? 1 : 0)
-            base.fill().opacity(isFaceUp ? 0 : 1)
+            .opacity(card.isFaceUp ? 1 : 0)
+            base.fill().opacity(card.isFaceUp ? 0 : 1)
         }
         .onTapGesture {
-            //            isFaceUp = !isFaceUp
-            isFaceUp.toggle() //toggle thuộc extension của Boolen thôi nhá
+
         }
         .foregroundColor(.orange)
         .imageScale(.small)
@@ -103,5 +89,5 @@ struct CardView: View {
 }
 
 #Preview {
-    ContentView()
+    EmojiMemoryGameView(viewModel: EmojiMemoryGame())
 }
